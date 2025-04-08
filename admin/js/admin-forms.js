@@ -128,6 +128,6 @@ jQuery(document).ready(function ($) {
     });
   });
 
-  // Initialize tooltips
-  $("[data-tooltip]").tooltip();
+  // // Initialize tooltips
+  // $("[data-tooltip]").tooltip();
 });
