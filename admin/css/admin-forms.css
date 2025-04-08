@@ -98,19 +98,23 @@
   background: #fcf0f1;
   color: #dc3232;
 }
+
 img {
   display: unset !important;
   vertical-align: middle !important;
   border: none !important;
 }
+
 #wpwrap {
   background: #f9fafb;
 }
+
 .fxc-forms-dashboard-link a {
   background: #039191 !important;
   color: #ffffff !important;
   border-radius: 0px !important;
 }
+
 /* Filters styling */
 .submission-filters {
   display: flex;
@@ -121,6 +125,7 @@ img {
 .submission-filters select {
   min-width: 150px;
 }
+
 /* assets/css/admin-forms.css continued */
 
 /* Table Styles */

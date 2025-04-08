@@ -154,4 +154,222 @@ class FXC_Forms_Submissions {
         fclose($output);
         exit;
     }
+    
+    /**
+     * AJAX Handler for exporting a single submission to CSV.
+     *
+     * @since    1.0.0
+     */
+    public function handle_export_single_submission() {
+        if (!current_user_can('manage_options')) {
+            wp_die(__('You do not have sufficient permissions to access this page.', 'fxc'));
+        }
+        check_admin_referer('export_single_submission', 'security');
+
+        $submission_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+        if (!$submission_id) {
+            wp_die(__('Invalid submission ID.', 'fxc'));
+        }
+
+        $submission = $this->db->get_submission($submission_id);
+        if (!$submission) {
+            wp_die(__('Submission not found.', 'fxc'));
+        }
+
+        // Send headers for CSV file
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="submission-' . $submission_id . '-' . date('Y-m-d') . '.csv"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        $output = fopen('php://output', 'w');
+
+        // Add UTF-8 BOM for Excel compatibility
+        fputs($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+        // Decode JSON data
+        $json_data = json_decode($submission->submission_json, true) ?: [];
+
+        // Create a flat list of all fields
+        $fields = ['id', 'submission_date', 'form_type', 'first_name', 'last_name', 'email', 'country', 'full_phone'];
+        $values = [
+            $submission->id,
+            $submission->submission_date,
+            $submission->form_type,
+            $submission->first_name,
+            $submission->last_name,
+            $submission->email,
+            $submission->country,
+            $submission->full_phone
+        ];
+
+        // Add all JSON fields
+        foreach ($json_data as $key => $value) {
+            // Skip fields we already covered
+            if (in_array($key, ['first_name', 'last_name', 'email', 'country', 'full_phone', 'form_type'])) {
+                continue;
+            }
+            
+            if (is_array($value)) {
+                $value = implode(', ', $value);
+            }
+            
+            $fields[] = $key;
+            $values[] = $value;
+        }
+
+        // Write fields as first row
+        fputcsv($output, $fields);
+        
+        // Write values as second row
+        fputcsv($output, $values);
+
+        fclose($output);
+        exit;
+    }
+    
+    /**
+     * Process submission deletion.
+     *
+     * @since    1.0.0
+     */
+    public function process_delete_submission() {
+        // Security check
+        if (!isset($_POST['action']) || $_POST['action'] !== 'delete_submission' || 
+            !isset($_POST['delete_submission_nonce']) || 
+            !wp_verify_nonce($_POST['delete_submission_nonce'], 'delete_submission')) {
+            return;
+        }
+
+        if (!current_user_can('manage_options')) {
+            wp_die(__('You do not have sufficient permissions to delete submissions.', 'fxc'));
+        }
+
+        $submission_id = isset($_POST['submission_id']) ? intval($_POST['submission_id']) : 0;
+        if (!$submission_id) {
+            return;
+        }
+
+        $result = $this->db->delete_submission($submission_id);
+        
+        // If we need to redirect after deletion (from details page)
+        if (isset($_POST['redirect']) && $_POST['redirect']) {
+            $redirect_url = admin_url('admin.php?page=fxc-forms-view');
+            if ($result) {
+                $redirect_url = add_query_arg('delete', 'success', $redirect_url);
+            } else {
+                $redirect_url = add_query_arg('delete', 'error', $redirect_url);
+            }
+            wp_safe_redirect($redirect_url);
+            exit;
+        }
+    }
+    
+    /**
+     * AJAX Handler for deleting a submission.
+     *
+     * @since    1.0.0
+     */
+    public function ajax_delete_submission() {
+        check_ajax_referer('delete_submission', 'security');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('You do not have sufficient permissions to delete submissions.', 'fxc')]);
+        }
+
+        $submission_id = isset($_POST['submission_id']) ? intval($_POST['submission_id']) : 0;
+        if (!$submission_id) {
+            wp_send_json_error(['message' => __('Invalid submission ID.', 'fxc')]);
+        }
+
+        $result = $this->db->delete_submission($submission_id);
+        
+        if ($result) {
+            wp_send_json_success(['message' => __('Submission deleted successfully.', 'fxc')]);
+        } else {
+            wp_send_json_error(['message' => __('Failed to delete submission.', 'fxc')]);
+        }
+    }
+    
+    /**
+     * Process bulk actions on submissions.
+     *
+     * @since    1.0.0
+     */
+    public function process_bulk_actions() {
+        // Security check
+        if (!isset($_POST['bulk_action_nonce']) || 
+            !wp_verify_nonce($_POST['bulk_action_nonce'], 'bulk_action_submissions')) {
+            return;
+        }
+
+        if (!current_user_can('manage_options')) {
+            wp_die(__('You do not have sufficient permissions to perform bulk actions.', 'fxc'));
+        }
+
+        $action = isset($_POST['bulk_action']) ? sanitize_text_field($_POST['bulk_action']) : '';
+        $submission_ids = isset($_POST['submission_ids']) ? array_map('intval', $_POST['submission_ids']) : [];
+
+        if (empty($action) || empty($submission_ids)) {
+            return;
+        }
+
+        switch ($action) {
+            case 'delete':
+                $deleted = 0;
+                foreach ($submission_ids as $id) {
+                    if ($this->db->delete_submission($id)) {
+                        $deleted++;
+                    }
+                }
+                
+                $redirect_url = admin_url('admin.php?page=fxc-forms-view');
+                if ($deleted > 0) {
+                    $redirect_url = add_query_arg([
+                        'bulk_action' => 'delete',
+                        'processed' => $deleted,
+                        'total' => count($submission_ids)
+                    ], $redirect_url);
+                } else {
+                    $redirect_url = add_query_arg('bulk_action', 'error', $redirect_url);
+                }
+                wp_safe_redirect($redirect_url);
+                exit;
+                
+            case 'export':
+                // Send headers for CSV file
+                header('Content-Type: text/csv');
+                header('Content-Disposition: attachment; filename="bulk-submissions-' . date('Y-m-d') . '.csv"');
+                header('Pragma: no-cache');
+                header('Expires: 0');
+
+                $output = fopen('php://output', 'w');
+
+                // Add UTF-8 BOM for Excel compatibility
+                fputs($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+                // Write CSV header row
+                fputcsv($output, ['ID', 'Submission Date', 'Form Type', 'First Name', 'Last Name', 'Email', 'Country', 'Phone']);
+
+                // Get and write submissions
+                foreach ($submission_ids as $id) {
+                    $submission = $this->db->get_submission($id);
+                    if ($submission) {
+                        fputcsv($output, [
+                            $submission->id,
+                            $submission->submission_date,
+                            $submission->form_type,
+                            $submission->first_name,
+                            $submission->last_name,
+                            $submission->email,
+                            $submission->country,
+                            $submission->full_phone
+                        ]);
+                    }
+                }
+
+                fclose($output);
+                exit;
+        }
+    }
 }

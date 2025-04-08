@@ -29,6 +29,15 @@ class FXC_Forms {
     protected $plugin_name = 'fxc-forms';
 
     /**
+     * The current version of the plugin.
+     *
+     * @since    1.0.0
+     * @access   protected
+     * @var      string    $version    The current version of this plugin.
+     */
+    protected $version;
+
+    /**
      * Define the core functionality of the plugin.
      *
      * Set the plugin name and load dependencies.
@@ -36,6 +45,7 @@ class FXC_Forms {
      * @since    1.0.0
      */
     public function __construct() {
+        $this->version = FXC_FORMS_VERSION;
         $this->load_dependencies();
         $this->define_admin_hooks();
         $this->define_public_hooks();
@@ -74,10 +84,13 @@ class FXC_Forms {
      * @since    1.0.0
      */
     private function define_admin_hooks() {
+        // Initialize admin functionality
+        $admin = new FXC_Forms_Admin($this->plugin_name, $this->version);
+        
         // Menu and pages
-        $this->loader->add_action('admin_menu', $this, 'add_admin_pages');
-        $this->loader->add_action('admin_enqueue_scripts', $this, 'enqueue_styles');
-        $this->loader->add_action('admin_enqueue_scripts', $this, 'enqueue_scripts');
+        $this->loader->add_action('admin_menu', $admin, 'add_admin_pages');
+        $this->loader->add_action('admin_enqueue_scripts', $admin, 'enqueue_styles');
+        $this->loader->add_action('admin_enqueue_scripts', $admin, 'enqueue_scripts');
         
         // Submissions handling
         $submissions = new FXC_Forms_Submissions($this->plugin_name, $this->version);
@@ -91,9 +104,8 @@ class FXC_Forms {
         $this->loader->add_action('wp_ajax_export_submissions', $submissions, 'handle_export_submissions');
         $this->loader->add_action('wp_ajax_export_single', $submissions, 'handle_export_single_submission');
         $this->loader->add_action('wp_ajax_delete_submission', $submissions, 'ajax_delete_submission');
-        $this->loader->add_action('wp_ajax_fetch_submissions_trend', $this, 'ajax_fetch_submissions_trend');
+        $this->loader->add_action('wp_ajax_fetch_submissions_trend', $admin, 'ajax_fetch_submissions_trend');
     }
-
 
     /**
      * Register all of the hooks related to the public-facing functionality.
@@ -102,7 +114,7 @@ class FXC_Forms {
      * @access   private
      */
     private function define_public_hooks() {
-        $public = new FXC_Forms_Public($this->plugin_name, FXC_FORMS_VERSION);
+        $public = new FXC_Forms_Public($this->plugin_name, $this->version);
         $form_handler = new FXC_Forms_Handler();
         $activecampaign = new FXC_Forms_ActiveCampaign();
 
