@@ -83,34 +83,34 @@ class FXC_Forms {
      *
      * @since    1.0.0
      */
-    private function define_admin_hooks() {
-        // Initialize admin functionality
-        $admin = new FXC_Forms_Admin($this->plugin_name, $this->version);
-        
-        // Menu and pages
-        $this->loader->add_action('admin_menu', $admin, 'add_admin_pages');
-        $this->loader->add_action('admin_enqueue_scripts', $admin, 'enqueue_styles');
-        $this->loader->add_action('admin_enqueue_scripts', $admin, 'enqueue_scripts');
-        
-        // Submissions handling
-        $submissions = new FXC_Forms_Submissions($this->plugin_name, $this->version);
-        
-        // Add check for delete/bulk action form submission
-        $this->loader->add_action('admin_init', $submissions, 'process_delete_submission');
-        $this->loader->add_action('admin_init', $submissions, 'process_bulk_actions');
-        
-        // AJAX handlers
-        $this->loader->add_action('wp_ajax_filter_form_submissions', $submissions, 'ajax_filter_submissions');
-        $this->loader->add_action('wp_ajax_export_submissions', $submissions, 'handle_export_submissions');
-        $this->loader->add_action('wp_ajax_export_single', $submissions, 'handle_export_single_submission');
-        $this->loader->add_action('wp_ajax_delete_submission', $submissions, 'ajax_delete_submission');
-        $this->loader->add_action('wp_ajax_fetch_submissions_trend', $admin, 'ajax_fetch_submissions_trend');
+private function define_admin_hooks() {
+    // Initialize admin functionality
+    $admin = new FXC_Forms_Admin($this->plugin_name, $this->version);
+    
+    // Menu and pages
+    $this->loader->add_action('admin_menu', $admin, 'add_admin_pages');
+    $this->loader->add_action('admin_enqueue_scripts', $admin, 'enqueue_styles');
+    $this->loader->add_action('admin_enqueue_scripts', $admin, 'enqueue_scripts');
+    
+    // Submissions handling
+    $submissions = new FXC_Forms_Submissions($this->plugin_name, $this->version);
+    
+    // Add check for delete/bulk action form submission
+    $this->loader->add_action('admin_init', $submissions, 'process_delete_submission');
+    $this->loader->add_action('admin_init', $submissions, 'process_bulk_actions');
+    
+    // AJAX handlers
+    $this->loader->add_action('wp_ajax_filter_form_submissions', $submissions, 'ajax_filter_submissions');
+    $this->loader->add_action('wp_ajax_export_submissions', $submissions, 'handle_export_submissions');
+    $this->loader->add_action('wp_ajax_export_single', $submissions, 'handle_export_single_submission');
+    $this->loader->add_action('wp_ajax_delete_submission', $submissions, 'ajax_delete_submission');
+    $this->loader->add_action('wp_ajax_fetch_submissions_trend', $admin, 'ajax_fetch_submissions_trend');
 
-
-$this->loader->add_action('wp_ajax_debug_form', $form_handler, 'ajax_debug_form');
-$this->loader->add_action('wp_ajax_nopriv_debug_form', $form_handler, 'ajax_debug_form');
-
-    }
+    // Add form handler for debug hook
+    $form_handler = new FXC_Forms_Handler();
+    $this->loader->add_action('wp_ajax_debug_form', $form_handler, 'ajax_debug_form');
+    $this->loader->add_action('wp_ajax_nopriv_debug_form', $form_handler, 'ajax_debug_form');
+}
 
     /**
      * Register all of the hooks related to the public-facing functionality.
@@ -167,6 +167,8 @@ $this->loader->add_action('wp_ajax_nopriv_debug_form', $form_handler, 'ajax_debu
         $this->loader->add_shortcode('fxc_renan_form', $shortcodes, 'renan_form');
         $this->loader->add_shortcode('fxc_mexico_expo_form', $shortcodes, 'mexico_expo_form');
         $this->loader->add_shortcode('fxc_ukta_form', $shortcodes, 'ukta_form');
+        // Testing Form
+        $this->loader->add_shortcode('fxc_contact_us_form', $shortcodes, 'contact_us_form');
     }
 
     /**

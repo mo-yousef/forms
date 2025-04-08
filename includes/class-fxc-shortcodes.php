@@ -146,4 +146,17 @@ class FXC_Forms_Shortcodes {
         include FXC_FORMS_PLUGIN_DIR . 'templates/ukta-form-template.php';
         return ob_get_clean();
     }
+    
+    /**
+     * Shortcode handler for: [fxc_contact_us_form]
+     *
+     * @since    1.0.0
+     * @return   string    The form HTML.
+     */
+    public function contact_us_form() {
+        ob_start();
+        include FXC_FORMS_PLUGIN_DIR . 'templates/contact-us-form-template.php';
+        return ob_get_clean();
+    }
+
 }

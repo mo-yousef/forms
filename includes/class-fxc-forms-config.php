@@ -354,6 +354,23 @@ class FXC_Forms_Config {
                 'notification_style' => 'overlay',
                 'client_side_validation' => true,
                 'server_side_validation' => true,
+            ],
+            'contact_us' => [
+                'id'     => 'contact_us',
+                'name'   => __('Contact Us', 'fxc'),
+                'shortcode' => 'fxc_contact_us_form',
+                'description' => __('Contact Us form with message subject', 'fxc'),
+                'list_id' => 000000, // Replace with your actual list ID
+                'tag_id'  => 000000, // Replace with your actual tag ID
+                'list_name' => 'Contact',
+                'tag_name'  => 'Contact Us',
+                'recipients' => ['webdev@4xc.com'],
+                'subject'  => __('New Contact Message from {first_name} {last_name}', 'fxc'),
+                'client_notification_enabled' => true,
+                'admin_notification_enabled'  => true,
+                'notification_style' => 'toast',
+                'client_side_validation' => true,
+                'server_side_validation' => true,
             ]
         ];
     }
