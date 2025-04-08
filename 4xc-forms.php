@@ -9,10 +9,10 @@
  *
  * @wordpress-plugin
  * Plugin Name:       4XC Forms
- * Plugin URI:        https://4xc.com/plugins/forms
+ * Plugin URI:        https://moyousif.com/
  * Description:       Custom forms and integration with ActiveCampaign for 4XC platform.
  * Version:           1.0.0
- * Author:            4XC Team
+ * Author:            Mohammad Yousif
  * Text Domain:       fxc
  * License:           GPL v2 or later
  * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
