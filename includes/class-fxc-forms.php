@@ -105,6 +105,11 @@ class FXC_Forms {
         $this->loader->add_action('wp_ajax_export_single', $submissions, 'handle_export_single_submission');
         $this->loader->add_action('wp_ajax_delete_submission', $submissions, 'ajax_delete_submission');
         $this->loader->add_action('wp_ajax_fetch_submissions_trend', $admin, 'ajax_fetch_submissions_trend');
+
+
+$this->loader->add_action('wp_ajax_debug_form', $form_handler, 'ajax_debug_form');
+$this->loader->add_action('wp_ajax_nopriv_debug_form', $form_handler, 'ajax_debug_form');
+
     }
 
     /**

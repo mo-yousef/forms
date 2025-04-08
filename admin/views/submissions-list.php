@@ -403,5 +403,108 @@ $paginated_submissions = array_slice($all_submissions, $offset, $items_per_page)
             <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div class="sm:flex sm:items-start">
                     <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                        <svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.
+<svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+</svg>
+</div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" class="delete-confirm w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                    <?php _e('Delete', 'fxc'); ?>
+                </button>
+                <button type="button" class="cancel-delete mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                    <?php _e('Cancel', 'fxc'); ?>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for handling deletion -->
+<script>
+jQuery(document).ready(function($) {
+    // Show date filter custom range
+    $('#date_range').change(function() {
+        if ($(this).val() === 'custom') {
+            $('#custom-date-range').removeClass('hidden');
+        } else {
+            $('#custom-date-range').addClass('hidden');
+        }
+    });
+    
+    // Select all checkboxes
+    $('#select-all').change(function() {
+        $('.submission-checkbox').prop('checked', $(this).prop('checked'));
+    });
+    
+    // Delete confirmation
+    $('.delete-submission').click(function(e) {
+        e.preventDefault();
+        const id = $(this).data('id');
+        $('#delete-modal').removeClass('hidden');
+        // Store ID for deletion
+        $('#delete-modal').data('submission-id', id);
+    });
+    
+    // Cancel deletion
+    $('.cancel-delete').click(function() {
+        $('#delete-modal').addClass('hidden');
+    });
+    
+    // Confirm deletion
+    $('.delete-confirm').click(function() {
+        const id = $('#delete-modal').data('submission-id');
+        
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'delete_submission',
+                submission_id: id,
+                security: '<?php echo wp_create_nonce("delete_submission"); ?>'
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#submission-' + id).fadeOut('slow', function() {
+                        $(this).remove();
+                    });
+                }
+            },
+            complete: function() {
+                $('#delete-modal').addClass('hidden');
+            }
+        });
+    });
+
+    // Export all button
+    $('#export-all-btn').click(function() {
+        const form_type = $('#form_type').val();
+        const date_range = $('#date_range').val();
+        const start_date = $('#start_date').val();
+        const end_date = $('#end_date').val();
+        const search = $('#search').val();
+        
+        let url = ajaxurl + '?action=export_submissions&form_type=' + form_type;
+        url += '&security=<?php echo wp_create_nonce("export_submissions"); ?>';
+        
+        if (date_range) {
+            url += '&date_range=' + date_range;
+        }
+        
+        if (start_date) {
+            url += '&start_date=' + start_date;
+        }
+        
+        if (end_date) {
+            url += '&end_date=' + end_date;
+        }
+        
+        if (search) {
+            url += '&search=' + search;
+        }
+        
+        window.location.href = url;
+    });
+});
+</script>
+</div>

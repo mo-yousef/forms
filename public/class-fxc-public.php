@@ -72,7 +72,7 @@ class FXC_Forms_Public {
             // Select2 CSS
             wp_enqueue_style(
                 'select2-css',
-                FXC_FORMS_PLUGIN_URL . 'public/vendors/select2/select2.min.css',
+                FXC_FORMS_PLUGIN_URL . 'public/select2/select2.min.css',
                 [],
                 $this->version
             );
@@ -113,7 +113,7 @@ class FXC_Forms_Public {
             // Select2 JS
             wp_enqueue_script(
                 'select2-js',
-                FXC_FORMS_PLUGIN_URL . 'public/js/select2/select2.min.js',
+                FXC_FORMS_PLUGIN_URL . 'public/select2/select2.min.js',
                 ['jquery'],
                 $this->version,
                 true

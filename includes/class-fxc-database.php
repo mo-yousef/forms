@@ -65,22 +65,23 @@ class FXC_Forms_Database {
      * @since    1.0.0
      * @return   wpdb|null    The database connection or null on failure.
      */
-    public function get_external_db() {
-        static $connection_attempted = false;
+public function get_external_db() {
+    static $connection_attempted = false;
+    
+    // If we already tried and failed to connect, don't keep trying
+    if ($connection_attempted && $this->external_db === null) {
+        error_log("FXC Forms: Skipping database connection - previous attempt failed");
+        return null;
+    }
+    
+    if ($this->external_db === null) {
+        $connection_attempted = true;
         
-        // If we already tried and failed to connect, don't keep trying
-        if ($connection_attempted && $this->external_db === null) {
-            return null;
-        }
-        
-        if ($this->external_db === null) {
-            $connection_attempted = true;
-            
+        try {
             // Get database credentials from config
             $db_config = FXC_Forms_Config::get_db_config();
             
-            // For testing/development - Use WordPress database if you can't connect to external DB
-            // Remove these lines in production and use your real external DB credentials
+            // For testing/development - Use WordPress database 
             global $wpdb;
             $this->external_db = new wpdb(
                 DB_USER,
@@ -89,25 +90,30 @@ class FXC_Forms_Database {
                 DB_HOST
             );
             
-            /* Original external DB connection - use this in production
-            $this->external_db = new wpdb(
-                $db_config['user'],
-                $db_config['password'],
-                $db_config['name'],
-                $db_config['host']
-            );
-            */
-            
             // Check for connection errors
             if (!empty($this->external_db->error)) {
-                error_log("External DB connection error: " . $this->external_db->error);
-                $this->external_db = null;
-                return null;
+                $error_msg = "External DB connection error: " . $this->external_db->error;
+                error_log($error_msg);
+                throw new Exception($error_msg);
             }
+            
+            // Test connection with a simple query
+            $test = $this->external_db->get_var("SELECT 1");
+            if ($test === null && $this->external_db->last_error) {
+                $error_msg = "DB connection test failed: " . $this->external_db->last_error;
+                error_log($error_msg);
+                throw new Exception($error_msg);
+            }
+            
+        } catch (Exception $e) {
+            error_log("FXC Forms DB Exception: " . $e->getMessage());
+            $this->external_db = null;
+            return null;
         }
-        
-        return $this->external_db;
     }
+    
+    return $this->external_db;
+}
     
     /**
      * Store a form submission in the database.
@@ -116,62 +122,116 @@ class FXC_Forms_Database {
      * @param    array    $data    The form submission data.
      * @return   array             Result with success status and submission ID.
      */
-    public function store_submission($data) {
-        try {
-            $db = $this->get_external_db();
+    // public function store_submission($data) {
+    //     try {
+    //         $db = $this->get_external_db();
             
-            // If DB connection failed, return error
-            if ($db === null) {
-                error_log("External DB connection failed in store_submission");
-                return ['success' => false];
-            }
+    //         // If DB connection failed, return error
+    //         if ($db === null) {
+    //             error_log("External DB connection failed in store_submission");
+    //             return ['success' => false];
+    //         }
             
-            // Create table if it doesn't exist
-            $this->create_custom_tables();
+    //         // Create table if it doesn't exist
+    //         $this->create_custom_tables();
             
-            $table_name = $db->prefix . 'form_submissions';
+    //         $table_name = $db->prefix . 'form_submissions';
             
-            // Prepare meta data
-            $meta_input = [];
-            foreach ($data as $key => $value) {
-                if (!in_array($key, ['action', 'security'], true)) {
-                    $meta_input[$key] = $value;
-                }
-            }
+    //         // Prepare meta data
+    //         $meta_input = [];
+    //         foreach ($data as $key => $value) {
+    //             if (!in_array($key, ['action', 'security'], true)) {
+    //                 $meta_input[$key] = $value;
+    //             }
+    //         }
             
-            // Encode the entire submission as JSON
-            $submission_json = wp_json_encode($meta_input);
+    //         // Encode the entire submission as JSON
+    //         $submission_json = wp_json_encode($meta_input);
             
-            $result = $db->insert(
-                $table_name,
-                [
-                    'form_type' => $data['form_type'],
-                    'first_name' => $data['first_name'],
-                    'last_name' => $data['last_name'],
-                    'email' => $data['email'],
-                    'country' => $data['country'] ?? '',
-                    'full_phone' => $data['full_phone'] ?? '',
-                    'submission_date' => current_time('mysql'),
-                    'submission_json' => $submission_json
-                ],
-                ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s']
-            );
+    //         $result = $db->insert(
+    //             $table_name,
+    //             [
+    //                 'form_type' => $data['form_type'],
+    //                 'first_name' => $data['first_name'],
+    //                 'last_name' => $data['last_name'],
+    //                 'email' => $data['email'],
+    //                 'country' => $data['country'] ?? '',
+    //                 'full_phone' => $data['full_phone'] ?? '',
+    //                 'submission_date' => current_time('mysql'),
+    //                 'submission_json' => $submission_json
+    //             ],
+    //             ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s']
+    //         );
 
-            if ($result === false) {
-                error_log("Database insert failed: " . $db->last_error);
-                return ['success' => false];
-            }
+    //         if ($result === false) {
+    //             error_log("Database insert failed: " . $db->last_error);
+    //             return ['success' => false];
+    //         }
             
-            $submission_id = $db->insert_id;
+    //         $submission_id = $db->insert_id;
             
-            return ['success' => true, 'submission_id' => $submission_id];
+    //         return ['success' => true, 'submission_id' => $submission_id];
             
-        } catch (Exception $e) {
-            error_log("Exception in store_submission: " . $e->getMessage());
-            return ['success' => false];
+    //     } catch (Exception $e) {
+    //         error_log("Exception in store_submission: " . $e->getMessage());
+    //         return ['success' => false];
+    //     }
+    // }
+public function store_submission($data) {
+    try {
+        $db = $this->get_external_db();
+        
+        // If DB connection failed, return error
+        if ($db === null) {
+            error_log("External DB connection failed in store_submission");
+            return ['success' => false, 'message' => 'Database connection failed'];
         }
+        
+        // Create table if it doesn't exist
+        $this->create_custom_tables();
+        
+        $table_name = $db->prefix . 'form_submissions';
+        
+        // Prepare meta data
+        $meta_input = [];
+        foreach ($data as $key => $value) {
+            if (!in_array($key, ['action', 'security'], true)) {
+                $meta_input[$key] = $value;
+            }
+        }
+        
+        // Encode the entire submission as JSON
+        $submission_json = wp_json_encode($meta_input);
+        
+        $result = $db->insert(
+            $table_name,
+            [
+                'form_type' => $data['form_type'],
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'email' => $data['email'],
+                'country' => $data['country'] ?? '',
+                'full_phone' => $data['full_phone'] ?? '',
+                'submission_date' => current_time('mysql'),
+                'submission_json' => $submission_json
+            ],
+            ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s']
+        );
+
+        if ($result === false) {
+            error_log("Database insert failed: " . $db->last_error);
+            return ['success' => false, 'message' => 'Database insert failed: ' . $db->last_error];
+        }
+        
+        $submission_id = $db->insert_id;
+        
+        return ['success' => true, 'submission_id' => $submission_id];
+        
+    } catch (Exception $e) {
+        error_log("Exception in store_submission: " . $e->getMessage());
+        return ['success' => false, 'message' => 'Exception: ' . $e->getMessage()];
     }
-    
+}
     /**
      * Delete a submission by ID.
      *
