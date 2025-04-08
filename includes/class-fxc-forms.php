@@ -50,7 +50,7 @@ class FXC_Forms {
      */
     private function load_dependencies() {
         // Core functionality
-        require_once FXC_FORMS_PLUGIN_DIR . 'includes/class-fxc-loader.php';
+        require_once FXC_FORMS_PLUGIN_DIR . 'includes/class-fxc-forms-loader.php';
         require_once FXC_FORMS_PLUGIN_DIR . 'includes/class-fxc-database.php';
         require_once FXC_FORMS_PLUGIN_DIR . 'includes/class-fxc-activecampaign.php';
         require_once FXC_FORMS_PLUGIN_DIR . 'includes/class-fxc-form-handler.php';
@@ -69,25 +69,31 @@ class FXC_Forms {
     }
 
     /**
-     * Register all of the hooks related to the admin area.
+     * Register all hooks related to the admin area functionality.
      *
      * @since    1.0.0
-     * @access   private
      */
     private function define_admin_hooks() {
-        $admin = new FXC_Forms_Admin($this->plugin_name, FXC_FORMS_VERSION);
-        $submissions = new FXC_Forms_Submissions($this->plugin_name, FXC_FORMS_VERSION);
-
-        // Admin menu and pages
-        $this->loader->add_action('admin_menu', $admin, 'add_admin_pages');
-        $this->loader->add_action('admin_enqueue_scripts', $admin, 'enqueue_styles');
-        $this->loader->add_action('admin_enqueue_scripts', $admin, 'enqueue_scripts');
+        // Menu and pages
+        $this->loader->add_action('admin_menu', $this, 'add_admin_pages');
+        $this->loader->add_action('admin_enqueue_scripts', $this, 'enqueue_styles');
+        $this->loader->add_action('admin_enqueue_scripts', $this, 'enqueue_scripts');
         
-        // AJAX handlers for admin dashboard
+        // Submissions handling
+        $submissions = new FXC_Forms_Submissions($this->plugin_name, $this->version);
+        
+        // Add check for delete/bulk action form submission
+        $this->loader->add_action('admin_init', $submissions, 'process_delete_submission');
+        $this->loader->add_action('admin_init', $submissions, 'process_bulk_actions');
+        
+        // AJAX handlers
         $this->loader->add_action('wp_ajax_filter_form_submissions', $submissions, 'ajax_filter_submissions');
         $this->loader->add_action('wp_ajax_export_submissions', $submissions, 'handle_export_submissions');
-        $this->loader->add_action('wp_ajax_fetch_submissions_trend', $admin, 'ajax_fetch_submissions_trend');
+        $this->loader->add_action('wp_ajax_export_single', $submissions, 'handle_export_single_submission');
+        $this->loader->add_action('wp_ajax_delete_submission', $submissions, 'ajax_delete_submission');
+        $this->loader->add_action('wp_ajax_fetch_submissions_trend', $this, 'ajax_fetch_submissions_trend');
     }
+
 
     /**
      * Register all of the hooks related to the public-facing functionality.

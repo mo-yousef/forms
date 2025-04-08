@@ -211,6 +211,7 @@ class FXC_Forms_Config {
                 'tag_id'  => 000000,
                 'list_name' => 'IB',
                 'tag_name'  => 'IB Tag',
+                'recipients' => ['webdev@4xc.com'],
                 'subject'  => __('New IB Request from {first_name} {last_name}', 'fxc'),
                 'client_notification_enabled' => false,
                 'admin_notification_enabled'  => true,
